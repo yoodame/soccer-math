@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate PWA Icons</title></head>
+<body>
+<h2>Click each button to download the icon</h2>
+<button onclick="generate(192)">Download 192x192</button>
+<button onclick="generate(512)">Download 512x512</button>
+<script>
+function generate(size) {
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const ctx = c.getContext('2d');
+    const s = size;
+    const p = s * 0.1; // safe area padding for maskable
+
+    // Background: green gradient
+    const bg = ctx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s*0.7);
+    bg.addColorStop(0, '#4caf50');
+    bg.addColorStop(1, '#1b5e20');
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.arc(s/2, s/2, s/2, 0, Math.PI*2);
+    ctx.fill();
+
+    // Subtle grass texture lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = s * 0.01;
+    for (let y = p; y < s - p; y += s * 0.05) {
+        ctx.beginPath(); ctx.moveTo(p, y); ctx.lineTo(s - p, y); ctx.stroke();
+    }
+
+    // Soccer ball
+    const bx = s/2, by = s * 0.38, br = s * 0.18;
+    // Ball body
+    const ballGrad = ctx.createRadialGradient(bx - br*0.3, by - br*0.3, br*0.1, bx, by, br);
+    ballGrad.addColorStop(0, '#ffffff');
+    ballGrad.addColorStop(0.7, '#e0e0e0');
+    ballGrad.addColorStop(1, '#bdbdbd');
+    ctx.fillStyle = ballGrad;
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI*2); ctx.fill();
+    // Ball pentagons
+    ctx.fillStyle = 'rgba(30,30,30,0.7)';
+    drawPentagon(ctx, bx, by, br * 0.3);
+    const angles = [0, Math.PI*0.4, Math.PI*0.8, Math.PI*1.2, Math.PI*1.6];
+    angles.forEach(a => {
+        drawPentagon(ctx, bx + Math.cos(a)*br*0.55, by + Math.sin(a)*br*0.55, br*0.2);
+    });
+    // Ball outline
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = s * 0.005;
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI*2); ctx.stroke();
+
+    // "MATH" text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${s * 0.14}px Arial Black, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = '#1b5e20';
+    ctx.lineWidth = s * 0.015;
+    ctx.strokeText('MATH', s/2, s * 0.7);
+    ctx.fillText('MATH', s/2, s * 0.7);
+
+    // "KICK" smaller
+    ctx.font = `bold ${s * 0.08}px Arial, sans-serif`;
+    ctx.strokeStyle = '#1b5e20';
+    ctx.lineWidth = s * 0.01;
+    ctx.strokeText('KICK', s/2, s * 0.82);
+    ctx.fillText('KICK', s/2, s * 0.82);
+
+    // Download
+    const link = document.createElement('a');
+    link.download = `icon-${size}.png`;
+    link.href = c.toDataURL('image/png');
+    link.click();
+}
+
+function drawPentagon(ctx, cx, cy, r) {
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+        const a = (i * Math.PI * 2 / 5) - Math.PI / 2;
+        const x = cx + Math.cos(a) * r;
+        const y = cy + Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+</script>
+</body>
+</html>
