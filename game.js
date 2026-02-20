@@ -701,37 +701,65 @@ class ProfileScene extends Phaser.Scene {
         this.nameValue = '';
         this.nameActive = false;
 
+        // Hidden HTML input to trigger on-screen keyboard on touch devices (iPad, phones)
+        this.hiddenInput = document.createElement('input');
+        this.hiddenInput.type = 'text';
+        this.hiddenInput.maxLength = 15;
+        this.hiddenInput.autocomplete = 'name';
+        this.hiddenInput.autocapitalize = 'words';
+        this.hiddenInput.setAttribute('enterkeyhint', 'done');
+        Object.assign(this.hiddenInput.style, {
+            position:'absolute', left:'-9999px', top:'0', width:'1px', height:'1px',
+            opacity:'0', fontSize:'16px', zIndex:'-1'
+        });
+        document.body.appendChild(this.hiddenInput);
+
         // Restore saved player data
         const hasSaved = loadPlayer();
         if (hasSaved && playerData.name) {
             this.nameValue = playerData.name;
+            this.hiddenInput.value = playerData.name;
             this.updateNameDisplay();
         }
 
-        inputZone.on('pointerdown', () => {
+        const activateInput = () => {
             this.nameActive = true;
             this.drawInputLine(true);
+            this.hiddenInput.value = this.nameValue;
+            this.hiddenInput.focus();
+        };
+
+        inputZone.on('pointerdown', activateInput);
+
+        // Sync hidden input → Phaser display
+        this.hiddenInput.addEventListener('input', () => {
+            this.nameValue = this.hiddenInput.value.slice(0, 15);
+            this.updateNameDisplay();
+            this.checkReady();
         });
 
-        this.input.on('pointerdown', (pointer) => {
-            const wx = pointer.worldX, wy = pointer.worldY;
-            if (wx < W/2-130 || wx > W/2+130 || wy < 162 || wy > 198) {
-                this.nameActive = false;
-                this.nameCursor.setAlpha(0);
-                this.drawInputLine(false);
+        // Handle Done / Enter on virtual keyboard
+        this.hiddenInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                this.hiddenInput.blur();
             }
         });
 
-        this.nameKeyHandler = (event) => {
-            if (!this.nameActive) return;
-            event.stopPropagation();
-            if (event.key === 'Backspace') { event.preventDefault(); this.nameValue = this.nameValue.slice(0,-1); }
-            else if (event.key === 'Enter' || event.key === 'Tab') { event.preventDefault(); this.nameActive = false; this.nameCursor.setAlpha(0); this.drawInputLine(false); }
-            else if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && this.nameValue.length < 15) { event.preventDefault(); this.nameValue += event.key; }
-            else { return; }
-            this.updateNameDisplay(); this.checkReady();
-        };
-        window.addEventListener('keydown', this.nameKeyHandler);
+        // When hidden input loses focus, deactivate
+        this.hiddenInput.addEventListener('blur', () => {
+            this.nameActive = false;
+            this.nameCursor.setAlpha(0);
+            this.drawInputLine(false);
+        });
+
+        // Tap outside name area → blur
+        this.input.on('pointerdown', (pointer) => {
+            const wx = pointer.worldX, wy = pointer.worldY;
+            if (wx < W/2-130 || wx > W/2+130 || wy < 162 || wy > 198) {
+                this.hiddenInput.blur();
+            }
+        });
 
         this.time.addEvent({ delay:500, loop:true, callback:() => { if(this.nameActive) this.nameCursor.setAlpha(this.nameCursor.alpha>0?0:1); }});
 
@@ -841,7 +869,7 @@ class ProfileScene extends Phaser.Scene {
             this.checkReady();
         }
 
-        this.add.text(W/2, 498, '\u26bd Press 1-4 during game for quick answers!', ts({
+        this.add.text(W/2, 498, '\u26bd Tap the answer to kick!', ts({
             fontSize:'10px', fontFamily:'Arial, sans-serif', color:'rgba(255,255,255,0.5)'
         })).setOrigin(0.5).setDepth(5);
 
@@ -849,7 +877,10 @@ class ProfileScene extends Phaser.Scene {
         this.cameras.main.fadeIn(400);
 
         this.events.on('shutdown', () => {
-            window.removeEventListener('keydown', this.nameKeyHandler);
+            if (this.hiddenInput && this.hiddenInput.parentNode) {
+                this.hiddenInput.blur();
+                this.hiddenInput.parentNode.removeChild(this.hiddenInput);
+            }
         });
     }
 
