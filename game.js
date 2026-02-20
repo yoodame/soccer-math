@@ -774,8 +774,10 @@ class ProfileScene extends Phaser.Scene {
         const gStartX = W/2 - 120;
         grades.forEach((label, i) => {
             const x = gStartX + i*60, y = 250;
-            const badge = this.add.image(x, y, 'gradeBadge').setScale(0.6).setInteractive({ useHandCursor:true, hitArea: new Phaser.Geom.Circle(40, 40, 50), hitAreaCallback: Phaser.Geom.Circle.Contains }).setDepth(5);
+            const badge = this.add.image(x, y, 'gradeBadge').setScale(0.6).setDepth(5);
             const txt = this.add.text(x, y, label, ts({ fontSize:'14px', fontFamily:'Arial Black, sans-serif', fontStyle:'bold', color:'#ffffff' })).setOrigin(0.5).setDepth(6);
+            // Larger invisible tap zone for touch devices (50×50)
+            const tapZone = this.add.zone(x, y, 56, 56).setInteractive({ useHandCursor:true }).setDepth(7);
             const selectGrade = () => {
                 SFX.click(); this.selectedGrade = i+1;
                 this.gradeButtons.forEach(gb => { gb.badge.setTexture('gradeBadge').setScale(0.6); });
@@ -783,10 +785,9 @@ class ProfileScene extends Phaser.Scene {
                 this.tweens.add({ targets:[badge,txt], scaleX:0.66, scaleY:0.66, duration:120, yoyo:true });
                 this.checkReady();
             };
-            badge.on('pointerdown', selectGrade);
-            txt.setInteractive({ useHandCursor:true }).on('pointerdown', selectGrade);
-            badge.on('pointerover', () => { if(this.selectedGrade!==i+1) badge.setAlpha(0.8); });
-            badge.on('pointerout', () => badge.setAlpha(1));
+            tapZone.on('pointerdown', selectGrade);
+            tapZone.on('pointerover', () => { if(this.selectedGrade!==i+1) badge.setAlpha(0.8); });
+            tapZone.on('pointerout', () => badge.setAlpha(1));
             this.gradeButtons.push({ badge, txt, grade:i+1 });
         });
 
@@ -811,9 +812,11 @@ class ProfileScene extends Phaser.Scene {
             glow.fillStyle(0xffd700, 0.1); glow.fillCircle(x, y+10, 50);
             this.avatarGlows.push(glow);
 
-            const sprite = this.add.image(x, y, 'avatar_'+i).setScale(0.55).setInteractive({ useHandCursor:true }).setDepth(5);
+            const sprite = this.add.image(x, y, 'avatar_'+i).setScale(0.55).setDepth(5);
+            // Larger invisible tap zone for touch devices (70×80)
+            const tapZone = this.add.zone(x, y+5, 70, 80).setInteractive({ useHandCursor:true }).setDepth(7);
 
-            sprite.on('pointerdown', () => {
+            tapZone.on('pointerdown', () => {
                 SFX.click(); this.selectedAvatar = i;
                 this.avatarGlows.forEach(gl => gl.setAlpha(0));
                 glow.setAlpha(1);
@@ -821,10 +824,10 @@ class ProfileScene extends Phaser.Scene {
                 this.tweens.add({ targets:sprite, scaleX:0.65, scaleY:0.65, duration:200, ease:'Back.easeOut' });
                 this.checkReady();
             });
-            sprite.on('pointerover', () => {
+            tapZone.on('pointerover', () => {
                 if (this.selectedAvatar !== i) this.tweens.add({ targets:sprite, scaleX:0.6, scaleY:0.6, duration:100 });
             });
-            sprite.on('pointerout', () => {
+            tapZone.on('pointerout', () => {
                 if (this.selectedAvatar !== i) this.tweens.add({ targets:sprite, scaleX:0.55, scaleY:0.55, duration:100 });
             });
             this.avatarButtons.push({ sprite, shadow, glow, idx:i });

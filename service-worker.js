@@ -1,4 +1,4 @@
-const CACHE_NAME = 'soccer-math-v3';
+const CACHE_NAME = 'soccer-math-v4';
 const ASSETS = [
     './',
     './index.html',
